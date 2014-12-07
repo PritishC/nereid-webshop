@@ -1,22 +1,37 @@
 '''
 
-    Test Product
+    Test Website
 
     :copyright: (c) 2014 by Openlabs Technologies & Consulting (P) LTD
     :license: GPLv3, see LICENSE for more details
 '''
 from decimal import Decimal
-from random import random
+from random import choice
+import json
 
+import trytond
 from trytond.tests.test_tryton import USER, DB_NAME, CONTEXT
 from trytond.transaction import Transaction
+from trytond.config import CONFIG
 from test_base import BaseTestCase
 
+CONFIG['elastic_search_server'] = "http://localhost:9200"
 
-class TestProduct(BaseTestCase):
+
+class TestWebsite(BaseTestCase):
     """
-    Test case for products in nereid-webshop.
+    Test case for website.
     """
+
+    def setUp(self):
+        """
+        setUp method
+        """
+        super(TestWebsite, self).setUp()
+
+        trytond.tests.test_tryton.install_module(
+            'nereid_webshop_elastic_search'
+        )
 
     def create_test_products(self):
         # Create product templates with products
@@ -69,7 +84,6 @@ class TestProduct(BaseTestCase):
                 'account_revenue': self._get_account_by_kind('revenue').id,
             }],
             uri='product-4',
-            displayed_on_eshop=False
         )
 
     def _create_product_template(
@@ -86,9 +100,9 @@ class TestProduct(BaseTestCase):
                                    on shop or not
         """
         _code_list = []
-        code = random.choice('ABCDEFGHIJK')
+        code = choice('ABCDEFGHIJK')
         while code in _code_list:
-            code = random.choice('ABCDEFGHIJK')
+            code = choice('ABCDEFGHIJK')
         else:
             _code_list.append(code)
 
@@ -175,3 +189,24 @@ class TestProduct(BaseTestCase):
 
                 # Beyond depth of 2, will not show.
                 self.assertNotIn('Node5', rv.data)
+
+    def test_0020_search_data(self):
+        """
+        Tests that the auto-complete search URL returns JSON product data.
+        """
+        with Transaction().start(DB_NAME, USER, context=CONTEXT):
+            self.setup_defaults()
+            app = self.get_app()
+
+            with app.test_client() as c:
+                self.create_test_products()
+
+                rv = c.get('/search-auto-complete?q=product')
+                self.assertEqual(rv.status_code, 200)
+
+                data = json.dumps(rv.data).results
+
+                self.assertIn({'value': 'product 1'}, data)
+                self.assertIn({'value': 'product 2'}, data)
+                self.assertIn({'value': 'product 3'}, data)
+                self.assertIn({'value': 'product 4'}, data)

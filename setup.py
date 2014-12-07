@@ -127,6 +127,7 @@ setup(
         'pycountry',
         'openlabs_payment_gateway_authorize_net',
         'cssutils',
+        'openlabs_nereid_webshop_elastic_search',
     ],
     cmdclass={
         'test': SQLiteTest,

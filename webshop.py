@@ -11,7 +11,7 @@ import os
 from flask.helpers import send_from_directory
 from trytond.model import ModelSQL, fields
 from trytond.pool import Pool, PoolMeta
-from nereid import current_app, route, render_template
+from nereid import current_app, route, render_template, request, jsonify
 from trytond.pyson import Eval, Not
 
 __metaclass__ = PoolMeta
@@ -110,3 +110,15 @@ class Website:
         ])
 
         return render_template('sitemap.jinja', nodes=nodes)
+
+    @classmethod
+    @route('/search-auto-complete')
+    def search_auto_complete(cls):
+        """
+        Handler for auto-completing search.
+        """
+        Product = Pool().get('product.product')
+
+        return jsonify(results=Product.elasticsearch_auto_complete(
+            request.args.get('q', '')
+        ))
