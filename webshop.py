@@ -113,7 +113,7 @@ class Website:
 
     @classmethod
     @route('/search-auto-complete')
-    def search_auto_complete(cls):
+    def auto_complete(cls):
         """
         Handler for auto-completing search.
         """
